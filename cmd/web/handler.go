@@ -14,7 +14,13 @@ func home(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	template, err := template.ParseFiles("./ui/html/home.page.tmpl", "./ui/html/base.layout.tmpl")
+	files := []string{
+		"./ui/html/home.page.tmpl",
+		"./ui/html/base.layout.tmpl",
+		"./ui/html/footer.partial.tmpl",
+	}
+
+	template, err := template.ParseFiles(files...)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(writer, "Internal Server Error", 500)
@@ -50,3 +56,6 @@ func snippetCreate(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "Created snippet id: %d", id)
 }
+
+// doesnt need to use PascalCase, since its used only in the same package (main)
+var fileServer http.Handler = http.FileServer(http.Dir("./ui/static/"))
