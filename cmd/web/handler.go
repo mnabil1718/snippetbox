@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
+	"text/template"
 )
 
 func home(writer http.ResponseWriter, request *http.Request) {
@@ -11,8 +13,19 @@ func home(writer http.ResponseWriter, request *http.Request) {
 		http.NotFound(writer, request)
 		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
-	writer.Write([]byte("Hello from the other side"))
+
+	template, err := template.ParseFiles("./ui/html/home.page.tmpl", "./ui/html/base.layout.tmpl")
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(writer, "Internal Server Error", 500)
+		return
+	}
+
+	err = template.Execute(writer, nil)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(writer, "Internal Server Error", 500)
+	}
 }
 func showSnippet(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
