@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"os"
 )
 
 type Application struct {
@@ -14,17 +13,8 @@ type Application struct {
 
 func main() {
 
-	// create necessary loggers
-	// create logs dir first
-	err := os.MkdirAll("./logs/", 0755)
-	if err != nil {
-		panic(err)
-	}
-
-	file, err := os.OpenFile("./logs/application.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		panic(err)
-	}
+	// create log file
+	file := CreateFile("./logs/", "./logs/application.log")
 
 	// entry point for dependency injection
 	app := &Application{
@@ -42,6 +32,6 @@ func main() {
 	}
 
 	app.InfoLogger.Printf("Starting server on %s...", *addr)
-	err = server.ListenAndServe()
+	err := server.ListenAndServe()
 	app.ErrorLogger.Fatal(err)
 }
