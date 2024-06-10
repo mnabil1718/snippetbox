@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"text/template"
 )
 
-func home(writer http.ResponseWriter, request *http.Request) {
+func (app *Application) home(writer http.ResponseWriter, request *http.Request) {
 	if request.URL.Path != "/" { // root path restriction
 		http.NotFound(writer, request)
 		return
@@ -22,22 +21,22 @@ func home(writer http.ResponseWriter, request *http.Request) {
 
 	template, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Println(err.Error())
+		app.ErrorLogger.Println(err.Error())
 		http.Error(writer, "Internal Server Error", 500)
 		return
 	}
 
 	err = template.Execute(writer, nil)
 	if err != nil {
-		log.Println(err.Error())
+		app.ErrorLogger.Println(err.Error())
 		http.Error(writer, "Internal Server Error", 500)
 	}
 }
-func showSnippet(writer http.ResponseWriter, request *http.Request) {
+func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Write([]byte("Display spewcific snippet"))
 }
-func snippetCreate(writer http.ResponseWriter, request *http.Request) {
+func (app *Application) snippetCreate(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		writer.Header().Set("Allowed", http.MethodPost)
 		writer.Header().Set("Content-Type", "application/json")

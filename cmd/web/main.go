@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+type Application struct {
+	InfoLogger  *log.Logger
+	ErrorLogger *log.Logger
+}
+
 func main() {
 
 	// create necessary loggers
@@ -23,13 +28,19 @@ func main() {
 	infoLog := log.New(file, "INFO \t", log.Ldate|log.Ltime)
 	errorLog := log.New(file, "ERROR \t", log.Ldate|log.Ltime|log.Lshortfile)
 
+	// entry point for dependency injection
+	app := &Application{
+		InfoLogger:  infoLog,
+		ErrorLogger: errorLog,
+	}
+
 	addr := flag.String("addr", "localhost:8080", "HTTP Server Address")
 	flag.Parse()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet", showSnippet)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet", app.showSnippet)
+	mux.HandleFunc("/snippet/create", app.snippetCreate)
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	server := http.Server{
