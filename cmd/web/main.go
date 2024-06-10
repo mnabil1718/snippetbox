@@ -1,14 +1,30 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log"
 	"net/http"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type Application struct {
 	InfoLogger  *log.Logger
 	ErrorLogger *log.Logger
+}
+
+func OpenDB(connString string) (*sql.DB, error) {
+	db, err := sql.Open("pgx", connString)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
 func main() {
@@ -23,7 +39,14 @@ func main() {
 	}
 
 	addr := flag.String("addr", "localhost:8080", "HTTP Server Address")
-	flag.Parse()
+	dsn := flag.String("dsn", "postgres://mnabil:Cucibaju123@localhost:5432/snippetbox", "PostgreSQL Connection String")
+	flag.Parse() // add any custom flag before parsing
+
+	db, err := OpenDB(*dsn)
+	if err != nil {
+		app.ErrorLogger.Fatal(err)
+	}
+	defer db.Close()
 
 	server := http.Server{
 		Addr:     *addr,
@@ -32,6 +55,6 @@ func main() {
 	}
 
 	app.InfoLogger.Printf("Starting server on %s...", *addr)
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	app.ErrorLogger.Fatal(err)
 }
