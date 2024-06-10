@@ -1,3 +1,3 @@
 ## Snippetbox
 
-Application repository for Alex Edward's Let's Go Book. Thank me later
+Application repository for Alex Edward's Let's Go Book.
