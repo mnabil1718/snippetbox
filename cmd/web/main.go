@@ -25,31 +25,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	infoLog := log.New(file, "INFO \t", log.Ldate|log.Ltime)
-	errorLog := log.New(file, "ERROR \t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// entry point for dependency injection
 	app := &Application{
-		InfoLogger:  infoLog,
-		ErrorLogger: errorLog,
+		InfoLogger:  log.New(file, "INFO \t", log.Ldate|log.Ltime),
+		ErrorLogger: log.New(file, "ERROR \t", log.Ldate|log.Ltime|log.Lshortfile),
 	}
 
 	addr := flag.String("addr", "localhost:8080", "HTTP Server Address")
 	flag.Parse()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet", app.showSnippet)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-
 	server := http.Server{
 		Addr:     *addr,
-		Handler:  mux,
-		ErrorLog: errorLog, // only for HTTP errors
+		Handler:  app.generateRoutes(),
+		ErrorLog: app.ErrorLogger, // only for HTTP errors
 	}
 
-	infoLog.Printf("Starting server on %s...", *addr)
+	app.InfoLogger.Printf("Starting server on %s...", *addr)
 	err = server.ListenAndServe()
-	errorLog.Fatal(err)
+	app.ErrorLogger.Fatal(err)
 }

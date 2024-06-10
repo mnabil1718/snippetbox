@@ -9,7 +9,7 @@ import (
 
 func (app *Application) home(writer http.ResponseWriter, request *http.Request) {
 	if request.URL.Path != "/" { // root path restriction
-		http.NotFound(writer, request)
+		app.NotFound(writer)
 		return
 	}
 
@@ -21,20 +21,25 @@ func (app *Application) home(writer http.ResponseWriter, request *http.Request) 
 
 	template, err := template.ParseFiles(files...)
 	if err != nil {
-		app.ErrorLogger.Println(err.Error())
-		http.Error(writer, "Internal Server Error", 500)
+		app.ServeError(writer, err)
 		return
 	}
 
 	err = template.Execute(writer, nil)
 	if err != nil {
-		app.ErrorLogger.Println(err.Error())
-		http.Error(writer, "Internal Server Error", 500)
+		app.ServeError(writer, err)
 	}
 }
 func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Request) {
+	id, err := strconv.Atoi(request.URL.Query().Get("id"))
+
+	if err != nil || id < 1 {
+		app.NotFound(writer)
+		return
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
-	writer.Write([]byte("Display spewcific snippet"))
+	fmt.Fprintf(writer, "Displaying snippet id: %d", id)
 }
 func (app *Application) snippetCreate(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
