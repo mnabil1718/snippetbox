@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -11,9 +12,10 @@ import (
 )
 
 type Application struct {
-	InfoLogger  *log.Logger
-	ErrorLogger *log.Logger
-	Snippets    *postgresql.SnippetModel
+	InfoLogger    *log.Logger
+	ErrorLogger   *log.Logger
+	Snippets      *postgresql.SnippetModel
+	TemplateCache map[string]*template.Template
 }
 
 func OpenDB(connString string) (*sql.DB, error) {
@@ -44,11 +46,16 @@ func main() {
 	}
 	defer db.Close()
 
+	cache, err := newTemplateCache("./ui/html")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// entry point for dependency injection
 	app := &Application{
-		InfoLogger:  log.New(file, "INFO \t", log.Ldate|log.Ltime),
-		ErrorLogger: log.New(file, "ERROR \t", log.Ldate|log.Ltime|log.Lshortfile),
-		Snippets:    &postgresql.SnippetModel{DB: db},
+		InfoLogger:    log.New(file, "INFO \t", log.Ldate|log.Ltime),
+		ErrorLogger:   log.New(file, "ERROR \t", log.Ldate|log.Ltime|log.Lshortfile),
+		Snippets:      &postgresql.SnippetModel{DB: db},
+		TemplateCache: cache,
 	}
 
 	server := http.Server{

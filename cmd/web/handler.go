@@ -21,28 +21,8 @@ func (app *Application) home(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-
-	for _, snippet := range snippets {
-		fmt.Fprintf(writer, "%v\n", snippet)
-	}
-
-	// files := []string{
-	// 	"./ui/html/home.page.tmpl",
-	// 	"./ui/html/base.layout.tmpl",
-	// 	"./ui/html/footer.partial.tmpl",
-	// }
-
-	// template, err := template.ParseFiles(files...)
-	// if err != nil {
-	// 	app.ServeError(writer, err)
-	// 	return
-	// }
-
-	// err = template.Execute(writer, nil)
-	// if err != nil {
-	// 	app.ServeError(writer, err)
-	// }
+	data := &TemplateData{Snippets: snippets}
+	app.render(writer, "home.page.tmpl", data)
 }
 func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Request) {
 	id, err := strconv.Atoi(request.URL.Query().Get("id"))
@@ -61,9 +41,9 @@ func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Re
 		}
 		return
 	}
+	data := &TemplateData{Snippet: snippet}
+	app.render(writer, "show.page.tmpl", data)
 
-	writer.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(writer, "%v", snippet)
 }
 func (app *Application) createSnippet(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {

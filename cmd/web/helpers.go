@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"os"
 	"runtime/debug"
+	"time"
 )
 
 func (app *Application) ServeError(writer http.ResponseWriter, err error) {
@@ -38,4 +40,29 @@ func CreateFile(parentDirPath string, filePath string) *os.File {
 	PanicIfError(err)
 
 	return file
+}
+
+func (app *Application) render(writer http.ResponseWriter, name string, templateData *TemplateData) {
+	templateSet, ok := app.TemplateCache[name]
+	if !ok {
+		app.ServeError(writer, fmt.Errorf("template name %s doesn't exists", name))
+	}
+
+	bufferPointer := new(bytes.Buffer)
+
+	err := templateSet.Execute(bufferPointer, app.addDefaultData(templateData))
+	if err != nil {
+		app.ServeError(writer, err)
+		return
+	}
+
+	bufferPointer.WriteTo(writer)
+}
+
+func (app *Application) addDefaultData(templateData *TemplateData) *TemplateData {
+	if templateData == nil {
+		return &TemplateData{}
+	}
+	templateData.CurrentYear = time.Now().Year()
+	return templateData
 }
