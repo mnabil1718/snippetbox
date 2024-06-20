@@ -10,10 +10,6 @@ import (
 )
 
 func (app *Application) home(writer http.ResponseWriter, request *http.Request) {
-	if request.URL.Path != "/" { // root path restriction
-		app.NotFound(writer)
-		return
-	}
 
 	snippets, err := app.Snippets.Latest()
 	if err != nil {
@@ -24,8 +20,9 @@ func (app *Application) home(writer http.ResponseWriter, request *http.Request) 
 	data := &TemplateData{Snippets: snippets}
 	app.render(writer, "home.page.tmpl", data)
 }
+
 func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Request) {
-	id, err := strconv.Atoi(request.URL.Query().Get("id"))
+	id, err := strconv.Atoi(request.URL.Query().Get(":id"))
 
 	if err != nil || id < 1 {
 		app.NotFound(writer)
@@ -46,20 +43,22 @@ func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Re
 
 }
 func (app *Application) createSnippet(writer http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPost {
-		writer.Header().Set("Allowed", http.MethodPost)
-		writer.Header().Set("Content-Type", "application/json")
-		http.Error(writer, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
 
-	id, err := app.Snippets.Insert("Third entry", "Hello/nDarkness/My old friend.", "7")
+	title := "Third entry"
+	content := "Hello/nDarkness/My old friend."
+	expiresInDays := "7"
+
+	id, err := app.Snippets.Insert(title, content, expiresInDays)
 	if err != nil {
 		app.ServeError(writer, err)
 		return
 	}
 
-	http.Redirect(writer, request, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
+	http.Redirect(writer, request, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
+}
+
+func (app *Application) createSnippetForm(writer http.ResponseWriter, request *http.Request) {
+	writer.Write([]byte("Create snippet form..."))
 }
 
 // doesnt need to use PascalCase, since its used only in the same package (main)
