@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/mnabil1718/snippetbox/pkg/forms"
 	"github.com/mnabil1718/snippetbox/pkg/models"
 )
 
@@ -40,13 +41,30 @@ func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Re
 	}
 	data := &TemplateData{Snippet: snippet}
 	app.render(writer, "show.page.tmpl", data)
-
 }
+
 func (app *Application) createSnippet(writer http.ResponseWriter, request *http.Request) {
 
-	title := "Third entry"
-	content := "Hello/nDarkness/My old friend."
-	expiresInDays := "7"
+	err := request.ParseForm()
+	if err != nil {
+		app.ClientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	title := request.PostForm.Get("title")
+	content := request.PostForm.Get("content")
+	expiresInDays := request.PostForm.Get("expires")
+
+	form := forms.New(request.PostForm)
+
+	form.Required("title", "content", "expires")
+	form.MaxLength(100, "title")
+	form.PermittedValues("expires", "1", "7", "365")
+
+	if !form.Valid() {
+		app.render(writer, "create.page.tmpl", &TemplateData{Form: form})
+		return
+	}
 
 	id, err := app.Snippets.Insert(title, content, expiresInDays)
 	if err != nil {
@@ -58,7 +76,7 @@ func (app *Application) createSnippet(writer http.ResponseWriter, request *http.
 }
 
 func (app *Application) createSnippetForm(writer http.ResponseWriter, request *http.Request) {
-	writer.Write([]byte("Create snippet form..."))
+	app.render(writer, "create.page.tmpl", &TemplateData{Form: forms.New(nil)})
 }
 
 // doesnt need to use PascalCase, since its used only in the same package (main)

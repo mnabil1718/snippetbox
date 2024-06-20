@@ -61,7 +61,7 @@ func (app *Application) render(writer http.ResponseWriter, name string, template
 
 func (app *Application) addDefaultData(templateData *TemplateData) *TemplateData {
 	if templateData == nil {
-		return &TemplateData{}
+		return &TemplateData{CurrentYear: time.Now().Year()}
 	}
 	templateData.CurrentYear = time.Now().Year()
 	return templateData

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mnabil1718/snippetbox/pkg/forms"
 	"github.com/mnabil1718/snippetbox/pkg/models"
 )
 
@@ -13,6 +14,7 @@ type TemplateData struct {
 	CurrentYear int
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
+	Form        *forms.Form
 }
 
 func humanDate(t time.Time) string {
