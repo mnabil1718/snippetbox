@@ -39,7 +39,7 @@ func (model *SnippetModel) Get(id int) (*models.Snippet, error) {
 
 func (model *SnippetModel) Latest() ([]*models.Snippet, error) {
 	snippets := []*models.Snippet{}
-	SQL := "SELECT id, title, content, created_at, expires_at FROM snippets WHERE expires_at > NOW() ORDER BY created_at LIMIT 10"
+	SQL := "SELECT id, title, content, created_at, expires_at FROM snippets WHERE expires_at > NOW() ORDER BY created_at DESC LIMIT 10"
 	rows, err := model.DB.Query(SQL)
 	if err != nil {
 		return nil, err

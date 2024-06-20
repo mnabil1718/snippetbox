@@ -42,7 +42,7 @@ func CreateFile(parentDirPath string, filePath string) *os.File {
 	return file
 }
 
-func (app *Application) render(writer http.ResponseWriter, name string, templateData *TemplateData) {
+func (app *Application) render(writer http.ResponseWriter, request *http.Request, name string, templateData *TemplateData) {
 	templateSet, ok := app.TemplateCache[name]
 	if !ok {
 		app.ServeError(writer, fmt.Errorf("template name %s doesn't exists", name))
@@ -50,7 +50,7 @@ func (app *Application) render(writer http.ResponseWriter, name string, template
 
 	bufferPointer := new(bytes.Buffer)
 
-	err := templateSet.Execute(bufferPointer, app.addDefaultData(templateData))
+	err := templateSet.Execute(bufferPointer, app.addDefaultData(request, templateData))
 	if err != nil {
 		app.ServeError(writer, err)
 		return
@@ -59,10 +59,12 @@ func (app *Application) render(writer http.ResponseWriter, name string, template
 	bufferPointer.WriteTo(writer)
 }
 
-func (app *Application) addDefaultData(templateData *TemplateData) *TemplateData {
+func (app *Application) addDefaultData(request *http.Request, templateData *TemplateData) *TemplateData {
+	flash := app.Session.PopString(request, "flash")
 	if templateData == nil {
-		return &TemplateData{CurrentYear: time.Now().Year()}
+		return &TemplateData{CurrentYear: time.Now().Year(), Flash: flash}
 	}
+	templateData.Flash = flash
 	templateData.CurrentYear = time.Now().Year()
 	return templateData
 }

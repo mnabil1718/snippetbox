@@ -19,7 +19,7 @@ func (app *Application) home(writer http.ResponseWriter, request *http.Request) 
 	}
 
 	data := &TemplateData{Snippets: snippets}
-	app.render(writer, "home.page.tmpl", data)
+	app.render(writer, request, "home.page.tmpl", data)
 }
 
 func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Request) {
@@ -39,8 +39,9 @@ func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Re
 		}
 		return
 	}
+
 	data := &TemplateData{Snippet: snippet}
-	app.render(writer, "show.page.tmpl", data)
+	app.render(writer, request, "show.page.tmpl", data)
 }
 
 func (app *Application) createSnippet(writer http.ResponseWriter, request *http.Request) {
@@ -62,7 +63,7 @@ func (app *Application) createSnippet(writer http.ResponseWriter, request *http.
 	form.PermittedValues("expires", "1", "7", "365")
 
 	if !form.Valid() {
-		app.render(writer, "create.page.tmpl", &TemplateData{Form: form})
+		app.render(writer, request, "create.page.tmpl", &TemplateData{Form: form})
 		return
 	}
 
@@ -72,11 +73,12 @@ func (app *Application) createSnippet(writer http.ResponseWriter, request *http.
 		return
 	}
 
+	app.Session.Put(request, "flash", "Snippet created sucessfully")
 	http.Redirect(writer, request, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
 func (app *Application) createSnippetForm(writer http.ResponseWriter, request *http.Request) {
-	app.render(writer, "create.page.tmpl", &TemplateData{Form: forms.New(nil)})
+	app.render(writer, request, "create.page.tmpl", &TemplateData{Form: forms.New(nil)})
 }
 
 // doesnt need to use PascalCase, since its used only in the same package (main)
