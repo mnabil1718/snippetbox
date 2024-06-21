@@ -11,7 +11,7 @@ import (
 	"github.com/justinas/nosurf"
 )
 
-func (app *Application) ServeError(writer http.ResponseWriter, err error) {
+func (app *Application) ServerError(writer http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
 	app.ErrorLogger.Output(2, trace)
 	http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -47,14 +47,14 @@ func CreateFile(parentDirPath string, filePath string) *os.File {
 func (app *Application) render(writer http.ResponseWriter, request *http.Request, name string, templateData *TemplateData) {
 	templateSet, ok := app.TemplateCache[name]
 	if !ok {
-		app.ServeError(writer, fmt.Errorf("template name %s doesn't exists", name))
+		app.ServerError(writer, fmt.Errorf("template name %s doesn't exists", name))
 	}
 
 	bufferPointer := new(bytes.Buffer)
 
 	err := templateSet.Execute(bufferPointer, app.addDefaultData(request, templateData))
 	if err != nil {
-		app.ServeError(writer, err)
+		app.ServerError(writer, err)
 		return
 	}
 
@@ -76,5 +76,9 @@ func (app *Application) addDefaultData(request *http.Request, templateData *Temp
 }
 
 func (app *Application) isAuthenticated(request *http.Request) bool {
-	return app.Session.Exists(request, "authenticatedUserID")
+	isAuthenticated, ok := request.Context().Value(isAuthenticatedContextKey).(bool)
+	if !ok {
+		return false
+	}
+	return isAuthenticated
 }

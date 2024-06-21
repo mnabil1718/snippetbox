@@ -14,6 +14,12 @@ import (
 	"github.com/mnabil1718/snippetbox/pkg/models/postgresql"
 )
 
+type contextKey string
+
+const isAuthenticatedContextKey = contextKey("isAuthenticated")
+
+const authenticatedUserIDSessionKey = "authenticatedUserID"
+
 type Application struct {
 	InfoLogger    *log.Logger
 	ErrorLogger   *log.Logger

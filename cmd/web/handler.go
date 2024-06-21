@@ -14,7 +14,7 @@ func (app *Application) home(writer http.ResponseWriter, request *http.Request) 
 
 	snippets, err := app.Snippets.Latest()
 	if err != nil {
-		app.ServeError(writer, err)
+		app.ServerError(writer, err)
 		return
 	}
 
@@ -35,7 +35,7 @@ func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Re
 		if errors.Is(err, models.ErrNoRecord) {
 			app.NotFound(writer)
 		} else {
-			app.ServeError(writer, err)
+			app.ServerError(writer, err)
 		}
 		return
 	}
@@ -65,7 +65,7 @@ func (app *Application) createSnippet(writer http.ResponseWriter, request *http.
 
 	id, err := app.Snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expires"))
 	if err != nil {
-		app.ServeError(writer, err)
+		app.ServerError(writer, err)
 		return
 	}
 
@@ -109,7 +109,7 @@ func (app *Application) signup(writer http.ResponseWriter, request *http.Request
 			return
 		}
 
-		app.ServeError(writer, err)
+		app.ServerError(writer, err)
 		return
 	}
 
@@ -147,7 +147,7 @@ func (app *Application) login(writer http.ResponseWriter, request *http.Request)
 			app.render(writer, request, "login.page.tmpl", &TemplateData{Form: form})
 			return
 		}
-		app.ServeError(writer, err)
+		app.ServerError(writer, err)
 		return
 	}
 
