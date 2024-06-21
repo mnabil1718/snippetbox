@@ -18,6 +18,7 @@ type Application struct {
 	InfoLogger    *log.Logger
 	ErrorLogger   *log.Logger
 	Snippets      *postgresql.SnippetModel
+	Users         *postgresql.UserModel
 	TemplateCache map[string]*template.Template
 	Session       *sessions.Session
 }
@@ -64,6 +65,7 @@ func main() {
 		InfoLogger:    log.New(file, "INFO \t", log.Ldate|log.Ltime),
 		ErrorLogger:   log.New(file, "ERROR \t", log.Ldate|log.Ltime|log.Lshortfile),
 		Snippets:      &postgresql.SnippetModel{DB: db},
+		Users:         &postgresql.UserModel{DB: db},
 		TemplateCache: cache,
 		Session:       session,
 	}

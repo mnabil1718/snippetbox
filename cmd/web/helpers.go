@@ -7,6 +7,8 @@ import (
 	"os"
 	"runtime/debug"
 	"time"
+
+	"github.com/justinas/nosurf"
 )
 
 func (app *Application) ServeError(writer http.ResponseWriter, err error) {
@@ -61,10 +63,18 @@ func (app *Application) render(writer http.ResponseWriter, request *http.Request
 
 func (app *Application) addDefaultData(request *http.Request, templateData *TemplateData) *TemplateData {
 	flash := app.Session.PopString(request, "flash")
+
+	// we'll pass in nil template data on views without data (e.g. sign up, login, etc)
 	if templateData == nil {
 		return &TemplateData{CurrentYear: time.Now().Year(), Flash: flash}
 	}
 	templateData.Flash = flash
 	templateData.CurrentYear = time.Now().Year()
+	templateData.IsAuthenticated = app.isAuthenticated(request)
+	templateData.CSRFToken = nosurf.Token(request)
 	return templateData
+}
+
+func (app *Application) isAuthenticated(request *http.Request) bool {
+	return app.Session.Exists(request, "authenticatedUserID")
 }

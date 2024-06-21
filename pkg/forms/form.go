@@ -3,6 +3,7 @@ package forms
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -11,6 +12,9 @@ type Form struct {
 	url.Values
 	Errors errors
 }
+
+// more performant, because compiling it once at runtime
+var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 func New(data url.Values) *Form {
 	return &Form{
@@ -35,6 +39,32 @@ func (form *Form) MaxLength(max int, fields ...string) {
 
 		if utf8.RuneCountInString(value) > max {
 			form.Errors.Add(field, fmt.Sprintf("%s cannot be more than %d characters.", field, max))
+		}
+	}
+}
+
+func (form *Form) MinLength(min int, fields ...string) {
+	for _, field := range fields {
+		value := form.Values.Get(field)
+		if value == "" {
+			return
+		}
+
+		if utf8.RuneCountInString(value) < min {
+			form.Errors.Add(field, fmt.Sprintf("%s has to be atleast %d characters long.", field, min))
+		}
+	}
+}
+
+func (form *Form) MatchesPattern(pattern *regexp.Regexp, fields ...string) {
+	for _, field := range fields {
+		value := form.Values.Get(field)
+		if value == "" {
+			return
+		}
+
+		if !pattern.MatchString(value) {
+			form.Errors.Add(field, fmt.Sprintf("%s is invalid.", field))
 		}
 	}
 }

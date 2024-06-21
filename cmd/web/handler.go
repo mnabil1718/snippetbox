@@ -52,10 +52,6 @@ func (app *Application) createSnippet(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	title := request.PostForm.Get("title")
-	content := request.PostForm.Get("content")
-	expiresInDays := request.PostForm.Get("expires")
-
 	form := forms.New(request.PostForm)
 
 	form.Required("title", "content", "expires")
@@ -67,7 +63,7 @@ func (app *Application) createSnippet(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	id, err := app.Snippets.Insert(title, content, expiresInDays)
+	id, err := app.Snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expires"))
 	if err != nil {
 		app.ServeError(writer, err)
 		return
@@ -79,6 +75,91 @@ func (app *Application) createSnippet(writer http.ResponseWriter, request *http.
 
 func (app *Application) createSnippetForm(writer http.ResponseWriter, request *http.Request) {
 	app.render(writer, request, "create.page.tmpl", &TemplateData{Form: forms.New(nil)})
+}
+
+func (app *Application) signupForm(writer http.ResponseWriter, request *http.Request) {
+	app.render(writer, request, "signup.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
+}
+func (app *Application) signup(writer http.ResponseWriter, request *http.Request) {
+	err := request.ParseForm()
+	if err != nil {
+		app.ClientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(request.PostForm)
+
+	form.Required("name", "email", "password")
+	form.MaxLength(255, "name", "email")
+	form.MatchesPattern(forms.EmailRX, "email")
+	form.MinLength(10, "password")
+
+	if !form.Valid() {
+		app.render(writer, request, "signup.page.tmpl", &TemplateData{Form: form})
+		return
+	}
+
+	err = app.Users.Insert(form.Get("name"), form.Get("email"), form.Get("password"))
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateEmail) {
+			form.Errors.Add("email", "Email is already in use.")
+			app.render(writer, request, "signup.page.tmpl", &TemplateData{Form: form})
+			return
+		}
+
+		app.ServeError(writer, err)
+		return
+	}
+
+	app.Session.Put(request, "flash", "User registered sucessfully.")
+	http.Redirect(writer, request, "/user/login", http.StatusSeeOther)
+
+}
+func (app *Application) loginForm(writer http.ResponseWriter, request *http.Request) {
+	app.render(writer, request, "login.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
+
+}
+func (app *Application) login(writer http.ResponseWriter, request *http.Request) {
+	err := request.ParseForm()
+	if err != nil {
+		app.ClientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(request.PostForm)
+
+	form.Required("email", "password")
+	form.MatchesPattern(forms.EmailRX, "email")
+
+	if !form.Valid() {
+		app.render(writer, request, "login.page.tmpl", &TemplateData{Form: form})
+		return
+	}
+
+	id, err := app.Users.Authenticate(form.Get("email"), form.Get("password"))
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.Errors.Add("generic", "Email or Password is incorrect.")
+			app.render(writer, request, "login.page.tmpl", &TemplateData{Form: form})
+			return
+		}
+		app.ServeError(writer, err)
+		return
+	}
+
+	app.Session.Put(request, "authenticatedUserID", id)
+	app.Session.Put(request, "flash", "Login Successful.")
+	http.Redirect(writer, request, "/snippet/create", http.StatusSeeOther)
+
+}
+func (app *Application) logout(writer http.ResponseWriter, request *http.Request) {
+	app.Session.Remove(request, "authenticatedUserID")
+	app.Session.Put(request, "flash", "Logout Successful.")
+	http.Redirect(writer, request, "/", http.StatusSeeOther)
 }
 
 // doesnt need to use PascalCase, since its used only in the same package (main)
