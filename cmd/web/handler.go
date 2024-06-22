@@ -10,6 +10,10 @@ import (
 	"github.com/mnabil1718/snippetbox/pkg/models"
 )
 
+func ping(writer http.ResponseWriter, request *http.Request) {
+	writer.Write([]byte("OK"))
+}
+
 func (app *Application) home(writer http.ResponseWriter, request *http.Request) {
 
 	snippets, err := app.Snippets.Latest()
@@ -82,6 +86,7 @@ func (app *Application) signupForm(writer http.ResponseWriter, request *http.Req
 		Form: forms.New(nil),
 	})
 }
+
 func (app *Application) signup(writer http.ResponseWriter, request *http.Request) {
 	err := request.ParseForm()
 	if err != nil {
@@ -104,7 +109,7 @@ func (app *Application) signup(writer http.ResponseWriter, request *http.Request
 	err = app.Users.Insert(form.Get("name"), form.Get("email"), form.Get("password"))
 	if err != nil {
 		if errors.Is(err, models.ErrDuplicateEmail) {
-			form.Errors.Add("email", "Email is already in use.")
+			form.Errors.Add("email", "email is already in use.")
 			app.render(writer, request, "signup.page.tmpl", &TemplateData{Form: form})
 			return
 		}
@@ -115,14 +120,14 @@ func (app *Application) signup(writer http.ResponseWriter, request *http.Request
 
 	app.Session.Put(request, "flash", "User registered sucessfully.")
 	http.Redirect(writer, request, "/user/login", http.StatusSeeOther)
-
 }
+
 func (app *Application) loginForm(writer http.ResponseWriter, request *http.Request) {
 	app.render(writer, request, "login.page.tmpl", &TemplateData{
 		Form: forms.New(nil),
 	})
-
 }
+
 func (app *Application) login(writer http.ResponseWriter, request *http.Request) {
 	err := request.ParseForm()
 	if err != nil {
@@ -154,8 +159,8 @@ func (app *Application) login(writer http.ResponseWriter, request *http.Request)
 	app.Session.Put(request, "authenticatedUserID", id)
 	app.Session.Put(request, "flash", "Login Successful.")
 	http.Redirect(writer, request, "/snippet/create", http.StatusSeeOther)
-
 }
+
 func (app *Application) logout(writer http.ResponseWriter, request *http.Request) {
 	app.Session.Remove(request, "authenticatedUserID")
 	app.Session.Put(request, "flash", "Logout Successful.")

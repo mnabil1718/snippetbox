@@ -11,6 +11,7 @@ import (
 
 	"github.com/golangcollege/sessions"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/mnabil1718/snippetbox/pkg/models"
 	"github.com/mnabil1718/snippetbox/pkg/models/postgresql"
 )
 
@@ -20,11 +21,23 @@ const isAuthenticatedContextKey = contextKey("isAuthenticated")
 
 const authenticatedUserIDSessionKey = "authenticatedUserID"
 
+type UserInterface interface {
+	Insert(name, email, password string) error
+	Authenticate(email, password string) (int, error)
+	Get(id int) (*models.User, error)
+}
+
+type SnippetInterface interface {
+	Insert(title, content, expiresAt string) (int, error)
+	Get(id int) (*models.Snippet, error)
+	Latest() ([]*models.Snippet, error)
+}
+
 type Application struct {
 	InfoLogger    *log.Logger
 	ErrorLogger   *log.Logger
-	Snippets      *postgresql.SnippetModel
-	Users         *postgresql.UserModel
+	Snippets      SnippetInterface
+	Users         UserInterface
 	TemplateCache map[string]*template.Template
 	Session       *sessions.Session
 }

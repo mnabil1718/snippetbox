@@ -13,6 +13,7 @@ func (app *Application) generateRoutes() http.Handler {
 
 	mux := pat.New()
 	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
+	mux.Get("/ping", http.HandlerFunc(ping))
 	mux.Post("/snippet/create", dynamicMiddleware.Append(app.requireAuth).ThenFunc(app.createSnippet))
 	mux.Get("/snippet/create", dynamicMiddleware.Append(app.requireAuth).ThenFunc(app.createSnippetForm))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
