@@ -25,6 +25,7 @@ type UserInterface interface {
 	Insert(name, email, password string) error
 	Authenticate(email, password string) (int, error)
 	Get(id int) (*models.User, error)
+	ChangePassword(id int, oldPassword, newPassword string) error
 }
 
 type SnippetInterface interface {
@@ -34,6 +35,7 @@ type SnippetInterface interface {
 }
 
 type Application struct {
+	Debug         bool
 	InfoLogger    *log.Logger
 	ErrorLogger   *log.Logger
 	Snippets      SnippetInterface
@@ -60,6 +62,7 @@ func main() {
 	// create log file
 	file := CreateFile("./logs/", "./logs/application.log")
 
+	debug := flag.Bool("debug", false, "Enable debug mode")
 	addr := flag.String("addr", "localhost:8080", "HTTP Server Address")
 	dsn := flag.String("dsn", "postgres://mnabil:Cucibaju123@localhost:5432/snippetbox", "PostgreSQL Connection String")
 	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge", "Secret key")
@@ -81,6 +84,7 @@ func main() {
 
 	// entry point for dependency injection
 	app := &Application{
+		Debug:         *debug,
 		InfoLogger:    log.New(file, "INFO \t", log.Ldate|log.Ltime),
 		ErrorLogger:   log.New(file, "ERROR \t", log.Ldate|log.Ltime|log.Lshortfile),
 		Snippets:      &postgresql.SnippetModel{DB: db},

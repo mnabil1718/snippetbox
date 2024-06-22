@@ -26,6 +26,10 @@ func (app *Application) home(writer http.ResponseWriter, request *http.Request) 
 	app.render(writer, request, "home.page.tmpl", data)
 }
 
+func (app *Application) about(writer http.ResponseWriter, request *http.Request) {
+	app.render(writer, request, "about.page.tmpl", nil)
+}
+
 func (app *Application) showSnippet(writer http.ResponseWriter, request *http.Request) {
 	id, err := strconv.Atoi(request.URL.Query().Get(":id"))
 
@@ -158,6 +162,12 @@ func (app *Application) login(writer http.ResponseWriter, request *http.Request)
 
 	app.Session.Put(request, "authenticatedUserID", id)
 	app.Session.Put(request, "flash", "Login Successful.")
+
+	path := app.Session.PopString(request, "redirectPathAfterLogin")
+	if path != "" {
+		http.Redirect(writer, request, path, http.StatusSeeOther)
+		return
+	}
 	http.Redirect(writer, request, "/snippet/create", http.StatusSeeOther)
 }
 
@@ -165,6 +175,64 @@ func (app *Application) logout(writer http.ResponseWriter, request *http.Request
 	app.Session.Remove(request, "authenticatedUserID")
 	app.Session.Put(request, "flash", "Logout Successful.")
 	http.Redirect(writer, request, "/", http.StatusSeeOther)
+}
+
+func (app *Application) profile(writer http.ResponseWriter, request *http.Request) {
+	id := app.Session.GetInt(request, authenticatedUserIDSessionKey)
+
+	user, err := app.Users.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.Session.Remove(request, authenticatedUserIDSessionKey)
+			app.NotFound(writer)
+			return
+		}
+
+		app.ServerError(writer, err)
+		return
+	}
+
+	app.render(writer, request, "profile.page.tmpl", &TemplateData{User: user})
+}
+
+func (app *Application) changePasswordForm(writer http.ResponseWriter, request *http.Request) {
+	app.render(writer, request, "password.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
+}
+
+func (app *Application) changePassword(writer http.ResponseWriter, request *http.Request) {
+	err := request.ParseForm()
+	if err != nil {
+		app.ClientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(request.PostForm)
+
+	form.Required("currentPassword", "newPassword", "newPasswordConfirmation")
+	form.MinLength(10, "currentPassword", "newPassword", "newPasswordConfirmation")
+	form.IsEqual("newPassword", "newPasswordConfirmation")
+
+	if !form.Valid() {
+		app.render(writer, request, "password.page.tmpl", &TemplateData{Form: form})
+		return
+	}
+
+	err = app.Users.ChangePassword(app.Session.GetInt(request, authenticatedUserIDSessionKey), form.Get("currentPassword"), form.Get("newPassword"))
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.Errors.Add("currentPassword", "invalid password.")
+			app.render(writer, request, "password.page.tmpl", &TemplateData{Form: form})
+			return
+		}
+
+		app.ServerError(writer, err)
+		return
+	}
+
+	app.Session.Put(request, "flash", "Password changed sucessfully.")
+	http.Redirect(writer, request, "/user/profile", http.StatusSeeOther)
 }
 
 // doesnt need to use PascalCase, since its used only in the same package (main)

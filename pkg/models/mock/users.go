@@ -42,3 +42,10 @@ func (model *UserModel) Get(id int) (*models.User, error) {
 		return nil, models.ErrNoRecord
 	}
 }
+
+func (model *UserModel) ChangePassword(id int, oldPassword, newPassword string) error {
+	if (id != 1) || (id == 1 && oldPassword != "Cucibaju123") {
+		return models.ErrInvalidCredentials
+	}
+	return nil
+}

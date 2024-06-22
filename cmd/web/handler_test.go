@@ -70,7 +70,6 @@ func TestShowSnippet(t *testing.T) {
 			assert.Contains(t, string(body), string(test.wantBody))
 		})
 	}
-
 }
 
 func TestSignupUser(t *testing.T) {
@@ -131,5 +130,45 @@ func TestSignupUser(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestCreateSnippetForm(t *testing.T) {
+
+	t.Run("Unauthorized", func(t *testing.T) {
+		app := newTestApplication(t)
+		ts := newTestServer(t, app.generateRoutes())
+		defer ts.Close()
+
+		code, header, _ := ts.get(t, "/snippet/create")
+
+		assert.Equal(t, http.StatusSeeOther, code)
+		assert.Equal(t, "/user/login", header.Get("Location"))
+
+	})
+
+	t.Run("Authorized", func(t *testing.T) {
+		app := newTestApplication(t)
+		ts := newTestServer(t, app.generateRoutes())
+		defer ts.Close()
+
+		// show login form
+		_, _, body := ts.get(t, "/user/login")
+		csrfToken := extractCSRFToken(t, body)
+
+		// login attempt
+		form := url.Values{}
+		form.Add("email", "alice@gmail.com")
+		form.Add("password", "Cucibaju123")
+		form.Add("csrf_token", csrfToken)
+		ts.postForm(t, "/user/login", form)
+
+		// show create snippet form
+		code, _, body := ts.get(t, "/snippet/create")
+
+		assert.Equal(t, http.StatusOK, code)
+		formTag := `<form action="/snippet/create" method="POST">`
+		if !bytes.Contains(body, []byte(formTag)) {
+			t.Errorf("want body %s to contain %q", body, formTag)
+		}
+	})
 }

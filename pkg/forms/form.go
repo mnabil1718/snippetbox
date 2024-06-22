@@ -84,6 +84,22 @@ func (form *Form) PermittedValues(field string, opts ...string) {
 	form.Errors.Add(field, fmt.Sprintf("%s value is invalid.", field))
 }
 
+func (form *Form) IsEqual(field1, field2 string) {
+	value1 := form.Values.Get(field1)
+	if value1 == "" {
+		return
+	}
+
+	value2 := form.Values.Get(field2)
+	if value2 == "" {
+		return
+	}
+
+	if value1 != value2 {
+		form.Errors.Add(field2, fmt.Sprintf("%s and %s don't match.", field1, field2))
+	}
+}
+
 func (form *Form) Valid() bool {
 	return len(form.Errors) == 0
 }

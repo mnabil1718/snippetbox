@@ -39,8 +39,8 @@ func (app *Application) recoverPanic(next http.Handler) http.Handler {
 
 func (app *Application) requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !app.Session.Exists(r, authenticatedUserIDSessionKey) {
-			app.Session.Put(r, "flash", "You have to be logged in first.")
+		if !app.isAuthenticated(r) {
+			app.Session.Put(r, "redirectPathAfterLogin", r.URL.Path)
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 			return
 		}
@@ -81,7 +81,7 @@ func (app *Application) authenticate(next http.Handler) http.Handler {
 		// if authID key exists, we can't trust it fully yet.
 		// we need to validate to DB if this ID for this user is correct
 		// if its not, we are going to treat them as unauthenticated
-		_, err := app.Users.Get(app.Session.GetInt(r, authenticatedUserIDSessionKey))
+		user, err := app.Users.Get(app.Session.GetInt(r, authenticatedUserIDSessionKey))
 		if err != nil {
 			if errors.Is(err, models.ErrNoRecord) {
 				app.Session.Remove(r, authenticatedUserIDSessionKey)
@@ -90,6 +90,12 @@ func (app *Application) authenticate(next http.Handler) http.Handler {
 			}
 
 			app.ServerError(w, err)
+			return
+		}
+
+		if !user.Active {
+			app.Session.Remove(r, authenticatedUserIDSessionKey)
+			next.ServeHTTP(w, r)
 			return
 		}
 

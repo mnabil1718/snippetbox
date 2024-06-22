@@ -64,7 +64,7 @@ func (model *UserModel) Authenticate(email, password string) (int, error) {
 func (model *UserModel) Get(id int) (*models.User, error) {
 	user := &models.User{}
 
-	SQL := "SELECT id, name, email, active, created_at FROM users WHERE id=$1 AND active=TRUE"
+	SQL := "SELECT id, name, email, active, created_at FROM users WHERE id=$1"
 	err := model.DB.QueryRow(SQL, id).Scan(&user.ID, &user.Name, &user.Email, &user.Active, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -75,4 +75,49 @@ func (model *UserModel) Get(id int) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (model *UserModel) GetWithPassword(id int) (*models.User, error) {
+	user := &models.User{}
+
+	SQL := "SELECT id, name, email, password, active, created_at FROM users WHERE id=$1"
+	err := model.DB.QueryRow(SQL, id).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Active, &user.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRecord
+		}
+
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (model *UserModel) ChangePassword(id int, oldPassword, newPassword string) error {
+
+	user, err := model.GetWithPassword(id)
+	if err != nil {
+		return err
+	}
+
+	err = bcrypt.CompareHashAndPassword(user.Password, []byte(oldPassword))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return models.ErrInvalidCredentials
+		}
+		return err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12) // cost below 12 is not recommended
+	if err != nil {
+		return err
+	}
+
+	SQL := "UPDATE users SET password=$1 WHERE id=$2"
+	_, err = model.DB.Exec(SQL, hashedPassword, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

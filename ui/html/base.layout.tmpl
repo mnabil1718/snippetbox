@@ -16,6 +16,7 @@
             <!-- Update the navigation to include signup, login and logout links -->
             <div>
                 <a href='/'>Home</a>
+                <a href='/about'>About</a>
                 {{ with .IsAuthenticated }}
                     <a href='/snippet/create'>Create snippet</a>
                 {{ end }}
@@ -23,6 +24,7 @@
             <div>
                 
                 {{ if .IsAuthenticated }}
+                    <a href='/user/profile'>Profile</a>
                     <form action='/user/logout' method='POST'>
                         <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
                         <button>Logout</button>
