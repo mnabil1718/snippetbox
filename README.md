@@ -1,3 +1,3 @@
 ## Snippetbox
 
-Application repository for Alex Edward's Let's Go Book.
+Personal implementation of Alex Edward's Let's Go Book. Using PostgreSQL
